@@ -16,7 +16,7 @@ You can use Pompernikkel as a static page, or control it remotely over WebSocket
 
 - Static preview (no server required)
 	- Download or clone this project.
-	- Open `html/index.html` in a modern desktop browser (Chrome, Edge, or Firefox recommended).
+	- Open `docs/index.html` in a modern desktop browser (Chrome, Edge, or Firefox recommended).
 	- Use the on-screen controls to toggle mouth/eyes/nose/breathing, trigger lightning, and toggle ambiance audio. Clicking the pumpkin also toggles audio.
 
 - WebSocket demo (Ruby)
