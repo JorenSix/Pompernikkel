@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Halloween Pumpkin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        #background-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 3px 3px 10px rgba(255, 107, 53, 0.5), 0 0 30px rgba(255, 165, 0, 0.3); }
+            to { text-shadow: 3px 3px 20px rgba(255, 107, 53, 0.8), 0 0 40px rgba(255, 165, 0, 0.6); }
+        }
+
+        .pumpkin-container {
+            position: relative;
+            transition: transform 0.3s ease;
+            width: 70vw;
+            height: auto;
+            z-index: 10;
+        }
+
+        .pumpkin-container:hover {
+            transform: scale(1.02);
+        }
+
+        svg {
+            max-width: 100%;
+            height: 80vh;
+            width: 90vw;
+            display: block;
+            filter: blur(1px) contrast(120%);
+            z-index: 20;
+            cursor: pointer;
+        }
+
+        /* Mouth animation */
+        .mouth {
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+
+        @keyframes mouthTalk {
+            0%, 100% { 
+                transform: scaleY(1) translateY(0) scaleX(1);
+            }
+            25% { 
+                transform: scaleY(1.03) translateY(10px) scaleX(1.05);
+            }
+            50% { 
+                transform: scaleY(0.97) translateY(-5px) scaleX(0.95);
+            }
+            75% { 
+                transform: scaleY(1) translateY(5px);
+            }
+        }
+
+        .mouth-animating {
+            animation: mouthTalk 0.6s ease-in-out infinite;
+        }
+
+        /* Eye animations */
+        .left_eye, .right_eye {
+            transform-origin: center;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { 
+                transform: scaleY(1);
+                opacity: 1;
+            }
+            95% { 
+                transform: scaleY(0.1);
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes lookAround {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            25% { transform: translateX(-3px) translateY(-2px); }
+            50% { transform: translateX(3px) translateY(-2px); }
+            75% { transform: translateX(0) translateY(2px); }
+        }
+
+        .eyes-animating .left_eye,
+        .eyes-animating .right_eye {
+            animation: blink 4s ease-in-out infinite, lookAround 5s ease-in-out infinite;
+        }
+
+        .eyes-animating .right_eye {
+            animation-delay: 0.015s;
+        }
+
+        /* Nose animation */
+        .nose {
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+
+        .right {
+            filter: drop-shadow(-20px 20px 25px white);
+        }
+
+        @keyframes noseWiggle {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-3deg) scale(1.05); }
+            75% { transform: rotate(3deg) scale(1.05); }
+        }
+
+        .nose-animating {
+            animation: noseWiggle 8s ease-in-out infinite;
+        }
+
+        /* Breathing animation for the whole pumpkin */
+        @keyframes breathe {
+            0%, 100% { 
+            transform: scale(1) translateY(0);
+            }
+            50% { 
+            transform: scale(1.05) translateY(-3px);
+            }
+        }
+
+        .pumpkin-breathing {
+            transform-origin: center bottom;
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                padding: 15px 20px;
+                flex-wrap: wrap;
+            }
+            
+            .label {
+                font-size: 1rem;
+            }
+        }
+
+        .subtitle-user, .subtitle-agent {
+            position: absolute;
+            bottom: 2%;
+            width: 90%;
+            text-align: center;
+            font-size: 1.8rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            z-index: 20;
+            height: auto;
+        }
+
+        .subtitle-agent {
+            position: absolute;
+            top: 2%;
+            width: 90%;
+            color: #ff6b35;
+        }
+
+        .fadeout {
+            animation: fadeOut 15s  ease-in forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .recording_animation {
+            background-color: red;
+            opacity: 1;
+            animation: recordingPulse 0.5s infinite;
+        }
+        @keyframes recordingPulse {
+            0% { opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="background-video-container">
+        <video id="background-video" autoplay loop muted>
+            <source src="halloween_bg.mp4"  type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+
+        <!-- Add audio element -->
+        <audio id="ambiance-audio" loop>
+            <source src="ambiance_1min.mp3" type="audio/mpeg" volume="0.5">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+
+    <div onclick="toggleAudio()" class="pumpkin-container pumpkin-breathing">
+        <!-- Complete SVG with all elements -->
+        <svg  height="570" width="600" viewBox="0 0 600 570" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="eyes-animating">
+            <defs>
+                <linearGradient id="linearGradient721">
+                    <stop offset="0" style="stop-color:#000000;stop-opacity:0.529412;"/>
+                    <stop offset="1" style="stop-color:#000000;stop-opacity:0;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient694">
+                    <stop offset="0" style="stop-color:#9e0000;stop-opacity:0;"/>
+                    <stop offset="1" style="stop-color:#df0000;stop-opacity:1;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient662">
+                    <stop offset="0" style="stop-color:#73d500;stop-opacity:1;"/>
+                    <stop offset="1" style="stop-color:#004700;stop-opacity:1;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient655">
+                    <stop offset="0" style="stop-color:#fff7cf;stop-opacity:1;"/>
+                    <stop offset="1" style="stop-color:#ffda62;stop-opacity:1;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient634">
+                    <stop offset="0" style="stop-color:#000000;stop-opacity:0;"/>
+                    <stop offset="1" style="stop-color:#ad0000;stop-opacity:0.0901961;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient601">
+                    <stop offset="0" style="stop-color:#ffd200;stop-opacity:1;"/>
+                    <stop offset="1" style="stop-color:#ff8500;stop-opacity:1;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient586">
+                    <stop offset="0" style="stop-color:#ffdf00;stop-opacity:1;"/>
+                    <stop offset="1" style="stop-color:#ff6f00;stop-opacity:1;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient579">
+                    <stop offset="0" style="stop-color:#000000;stop-opacity:0.0509804;"/>
+                    <stop offset="1" style="stop-color:#ad0000;stop-opacity:0.0901961;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient571">
+                    <stop offset="0" style="stop-color:#ffd200;stop-opacity:1;"/>
+                    <stop offset="1" style="stop-color:#ff8500;stop-opacity:1;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient564">
+                    <stop offset="0" style="stop-color:#ff6a00;stop-opacity:1;"/>
+                    <stop offset="1" style="stop-color:#ff9f00;stop-opacity:1;"/>
+                </linearGradient>
+                <linearGradient id="linearGradient567" x1="419.36551" x2="458.83037" xlink:href="#linearGradient564" y1="370.36877" y2="503.62054" gradientTransform="matrix(0.86475454,0,0,1.1563975,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient568" x1="339.42155" x2="339.42155" xlink:href="#linearGradient564" y1="377.80927" y2="477.75576" gradientTransform="matrix(0.8647541,0,0,1.1563981,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient570" xlink:href="#linearGradient601" gradientTransform="matrix(0.78870508,0,0,1.2679011,-33.727506,-195.43959)" x1="471.33588" y1="277.8311" x2="781.08848" y2="277.8311" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient575" x1="294.28724" x2="417.22258" xlink:href="#linearGradient579" y1="442.72253" y2="442.72253" gradientTransform="matrix(1.2584745,0,0,0.79461282,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient583" x1="555.08081" x2="837.32735" xlink:href="#linearGradient579" y1="323.9726" y2="403.35398" gradientTransform="matrix(0.60528612,0,0,1.6521112,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <radialGradient cx="259.07971" cy="369.2073" fx="259.07971" fy="369.2073" id="radialGradient584" r="360.05116" xlink:href="#linearGradient571" gradientTransform="matrix(0.84054568,0,0,1.1897033,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <radialGradient cx="474.37926" cy="305.16144" fx="474.37926" fy="305.16144" id="radialGradient585" r="341.1857" xlink:href="#linearGradient586" gradientTransform="matrix(0.70649471,0,0,1.4154388,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <radialGradient cx="78.145845" cy="314.58053" fx="78.145845" fy="314.58053" id="radialGradient604" r="342.74527" xlink:href="#linearGradient601" gradientTransform="matrix(0.78234009,0,0,1.2782165,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient610" x1="499.32951" x2="518.0364" xlink:href="#linearGradient694" y1="308.54178" y2="610.98623" gradientTransform="matrix(0.85678194,0,0,1.1671581,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient625" x1="580.03119" x2="712.49756" xlink:href="#linearGradient634" y1="414.86031" y2="414.86031" gradientTransform="matrix(0.72052505,0,0,1.3878768,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <radialGradient cx="24.990466" cy="1292.4297" fx="24.990466" fy="1292.4297" id="radialGradient626" r="127.51548" xlink:href="#linearGradient634" gradientTransform="matrix(3.9334491,0,0,1.3390504,100.04009,-1235.5906)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient642" x1="240.03326" x2="240.73974" xlink:href="#linearGradient564" y1="790.48945" y2="1053.4808" gradientTransform="matrix(1.35623,0,0,0.73733804,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient648" x1="477.09957" x2="536.04483" xlink:href="#linearGradient579" y1="158.88198" y2="158.88198" gradientTransform="matrix(0.33306356,0,0,3.0024299,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <radialGradient cx="245.20484" cy="907.81124" fx="245.20484" fy="907.81124" id="radialGradient651" r="83.00951" xlink:href="#linearGradient655" gradientTransform="matrix(1.4889197,0,0,0.67162788,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient658" x1="492.79725" x2="546.75533" xlink:href="#linearGradient655" y1="443.67748" y2="441.07392" gradientTransform="matrix(0.90677263,0,0,1.1028123,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient660" x1="338.94416" x2="218.85221" xlink:href="#linearGradient655" y1="426.9088" y2="424.43655" gradientTransform="matrix(0.88636127,0,0,1.1282081,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient661" x1="304.40915" x2="394.84807" xlink:href="#linearGradient662" y1="290.25322" y2="329.62124" gradientTransform="matrix(0.99918055,0,0,1.0008201,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient671" x1="572.58658" x2="616.46895" xlink:href="#linearGradient579" y1="201.47339" y2="201.47339" gradientTransform="matrix(0.54021699,0,0,1.851108,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient680" x1="363.61144" x2="410.94406" xlink:href="#linearGradient564" y1="564.51246" y2="588.89253" gradientTransform="matrix(1.0307521,0,0,0.97016538,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient689" x1="247.25165" x2="222.56674" xlink:href="#linearGradient694" y1="1380.3824" y2="1440.8093" gradientTransform="matrix(1.8881382,0,0,0.52962225,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient690" x1="319.46187" x2="256.09975" xlink:href="#linearGradient662" y1="358.69061" y2="340.78953" gradientTransform="matrix(1.2700529,0,0,0.78736876,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient691" x1="424.59869" x2="473.70514" xlink:href="#linearGradient721" y1="237.60476" y2="264.45974" gradientTransform="matrix(0.73484204,0,0,1.3608367,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+                <linearGradient id="linearGradient692" x1="537.08882" x2="537.78912" xlink:href="#linearGradient564" y1="377.14442" y2="391.74753" gradientTransform="matrix(0.60127338,0,0,1.663137,-33.727506,-195.43959)" gradientUnits="userSpaceOnUse"/>
+            </defs>
+            
+            <!-- All pumpkin paths from the original SVG -->
+            <path d="m 619.66434,476.59938 a 247.26439,84.175123 0 1 0 -494.52876,0 247.2648,84.175311 0 1 0 494.5296,10e-4 l -247.26521,-10e-4 z" style="fill:url(#radialGradient626);fill-rule:evenodd;stroke-width:2.29501"/>
+            <path d="m 303.42949,87.099411 c 6.127,6.918 13.266,15.256999 19.395,22.172999 10.784,-5.302 21.567,-10.605999 32.353,-15.909999 5.882,-7.609 13.321,-12.289 19.205,-19.896 0.735,-2.535 -0.308,-5.281 0.427,-8.446 -54.446,25.687 -52.424,1.497 -71.38,22.079 z" style="fill:url(#linearGradient690);fill-rule:evenodd"/>
+            <path d="m 226.84449,165.41041 c 0,0 72.287,46.507 72.287,45.701 0,-0.806 59.006,-45.163 59.006,-45.163 -37.322,-49.056 27.829,-78.383999 16.111,-103.906999 -14.23,8.859 -27.89,35.377 -42.691,26.58 -7.452,10.888 -21.169,4.119 -28.053,-2.081 -6.948,42.560999 -7.63,61.370999 -76.66,78.869999 z" style="fill:url(#linearGradient661);fill-rule:evenodd"/>
+            <path d="m 299.57549,178.24241 c 10.74,130.222 21.48,261.23 32.219,391.451 -16.646,-4.833 -33.293,-9.666 -49.94,-14.498 -268.763696,63.096 -263.225696,-478.015999 17.721,-376.953 z" style="fill:url(#radialGradient604);fill-rule:evenodd"/>
+            <path class="right" d="m 338.01749,163.74441 c 184.328,-42.26 237.762,121.345 240.858,157.054 25.036,152.798 -92.596,220.972 -151.661,228.76 -28.372,-128.877 -60.824,-256.937 -89.197,-385.814 z" style="fill:url(#linearGradient570);fill-rule:evenodd"/>
+            <path d="m 317.43349,94.177411 c 6.497,-0.758 12.994,-0.541 19.491,-1.299 -4.548,25.229999 -0.324,72.224999 -4.872,97.454999 14.293,-1.299 -47.753,-17.542 -47.753,-17.867 20.465,-18.841 33.784,-70.817 33.134,-78.288999 z" style="fill:url(#linearGradient691);fill-rule:evenodd"/>
+            <path d="m 285.07549,173.39641 c 0.806,0 12.725,4.94 12.725,4.94 l 40.437,-14.605 38.663,11.276 103.103,158.681 c 0,0 -48.33,153.848 -48.33,154.652 0,0.806 -51.551,70.077 -51.551,70.077 h -20.137 l -24.164,15.305 -53.969,-19.332 c -166.467,-163.244 -68.735,-372.402 3.223,-380.994 z" style="fill:url(#radialGradient584);fill-rule:evenodd"/>
+            <path d="m 297.10349,177.34641 c -53.524,41.577 -67.54,115.618 -67.682,205.011 4.167,-90.239 14.734,-154.506 67.682,-205.011 z" style="fill:#fff4cc;fill-opacity:0.188235;fill-rule:evenodd"/>
+            <path d="m 279.14749,271.60341 c -6.353,46.122 -12.919,81.277 0.961,157.07 -11.94,-41.405 -22.715,-86.211 -0.961,-157.07 z" style="fill:#ffa400;fill-rule:evenodd"/>
+            <path d="m 317.95349,171.70041 c 168.336,78.314 75.297,310.428 40.822,386.315 8.323,4.297 23.09,5.371 35.844,4.029 12.754,-1.343 24.7,-5.503 36.65,-11.678 70.345,-54.237 96.202,-198.197 80.815,-255.441 -16.137,-59.185 -106.649,-156.088 -194.131,-123.225 z" style="fill:url(#radialGradient585);fill-rule:evenodd"/>
+            <path d="m 457.14149,216.81741 c -16.607,51.29 -39.515,91.844 -90.893,124.831 7.805,1.011 32.625,5.112 40.432,6.125 l 16.036,-16.581 4.086,18.599 c 7.8,1.009 25.284,2.978 33.094,3.985 12.254,-47.788 11.965,-95.459 -2.755,-136.959 z" style="fill:url(#linearGradient567);fill-rule:evenodd"/>
+            <path d="m 206.23649,217.93741 c 16.606,51.29 39.514,91.842 90.892,124.831 -7.804,1.011 -32.625,5.111 -40.432,6.123 l -23.107,-19.227 5.419,20.84 c -7.801,1.011 -27.718,3.385 -35.528,4.392 -12.254,-47.788 -11.965,-95.459 2.756,-136.959 z" style="fill:url(#linearGradient568);fill-rule:evenodd"/>
+            
+            <path class=mouth_contour d="m 204.62149,382.61841 c 10.127,9.347 39.254,31.085 49.381,40.433 -0.81,15.578 -1.451,22.402 -2.92,37.981 0,0 26.443,4.586 32.227,5.654 1.318,-7.605 3.409,-20.984 4.236,-30.898 13.047,1.168 110.446,37.084 161.854,-47.428 28.821,128.327 -208.168,212.357 -244.778,-5.742 z" style="fill:url(#linearGradient642);fill-rule:evenodd"/>
+            
+            <!-- Right eye -->
+            <path d="m 447.56949,242.85141 c -13.913,37.663 -32.763,61.163 -73.032,90.623 6.539,0.739 22.994,4.392 29.537,5.137 l 15.777,-16.809 4.829,18.695 c 6.543,0.745 18.655,2.187 25.202,2.926 10.269,-35.091 10.027,-70.097 -2.313,-100.572 z" style="fill:url(#linearGradient658);fill-rule:evenodd" class="right_eye"/>
+            
+            <!-- Left eye -->
+            <path d="m 214.57649,241.66641 c 14.751,35.911 33.491,63.613 68.123,90.776 -5.997,0.72 -22.5,1.641 -28.499,2.363 l -21.909,-4.95 4.015,6.386 c -5.993,0.72 -16.993,2.119 -22.992,2.834 -9.416,-33.989 -10.048,-67.893 1.262,-97.409 z" style="fill:url(#linearGradient660);fill-rule:evenodd" class="left_eye"/>
+            
+            <!-- Nose triangle and detail -->
+            <path d="m 334.05849,331.78541 -27.067,56.125 59.63,-1.386 z" style="fill:url(#linearGradient680);fill-rule:evenodd"/>
+            <path d="m 329.72449,342.52541 -16.319,34.136 37.267,0.197 z" style="fill:#fff4cf;fill-rule:evenodd" class="nose nose-animating"/>
+            
+            <!-- Mouth -->
+            <path d="m 214.43449,389.99741 c 10.127,8.228 29.441,21.219 39.568,29.451 -0.81,13.711 -0.561,19.717 -2.03,33.431 0,0 25.553,4.036 31.337,4.976 1.318,-6.694 3.409,-18.469 4.236,-27.197 13.047,1.028 108.782,38.517 161.667,-38.723 14.251,125.972 -207.094,152.187 -234.778,-1.938 z" style="fill:url(#radialGradient651);fill-rule:evenodd" class="mouth"/>
+            
+            <!-- All other detail paths from the original -->
+            <path d="m 349.25349,240.66341 c 16.723,66.116 15.72,128.854 -3.012,201.39 14.06,-20.719 26.607,-52.847 27.109,-89.725 -2.51,-43.924 -12.551,-78.927 -24.097,-111.665 z" style="fill:#ff9000;fill-rule:evenodd"/>
+            <path d="m 231.91249,328.66241 2.503,-8.216 22.205,14.682 0.264,11.445 z" style="fill:#eb7f3d;fill-rule:evenodd"/>
+            <path d="m 423.16449,328.81241 -3.476,-6.796 -15.695,16.342 4.446,8.889 z" style="fill:#ffa900;fill-rule:evenodd"/>
+            <path d="m 283.72449,458.05941 7.033,-6.857 3.092,-19.578 -6.013,-1.571 z" style="fill:url(#linearGradient692);fill-rule:evenodd"/>
+        </svg>
+   
+        <div class="subtitle-user">  </div>
+        <div class="subtitle-agent"> </div>
+    </div>
+
+    <div class="controls" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 15px; z-index: 30; max-width: 500px; width: 90%;">
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+            <label style="display: flex; align-items: center; gap: 10px; color: white;">
+                <input type="checkbox" id="mouthToggle">
+                <span class="label">Animate Mouth</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 10px; color: white;">
+                <input type="checkbox" id="eyesToggle" checked>
+                <span class="label">Animate Eyes</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 10px; color: white;">
+                <input type="checkbox" id="noseToggle" checked>
+                <span class="label">Wiggle Nose</span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 10px; color: white;">
+                <input type="checkbox" id="breathingToggle" checked>
+                <span class="label">Breathing</span>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; color: white;">
+                <input type="checkbox" id="recordingToggle">
+                <span class="label">Recording</span>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; color: white;">
+                <input type="checkbox" id="wsEnableToggle">
+                <span class="label">Remote control (WS)</span>
+            </label>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: start;">
+            <button id="lightningButton" style="padding: 10px 15px; border-radius: 5px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold; cursor: pointer; font-size: 0.9rem; transition: transform 0.2s; white-space: nowrap;">
+                ⚡ Lightning
+            </button>
+            
+             
+            <button id="audioToggleButton" style="padding: 10px 15px; border-radius: 5px; border: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; font-weight: bold; cursor: pointer; font-size: 0.9rem; transition: transform 0.2s; white-space: nowrap;">
+                🔊 Play Audio
+            </button>
+
+             <input type="text" id="agentTextInput" placeholder="Agent subtitle..." style="padding: 10px; border-radius: 5px; border: none; background: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">
+          
+        </div>
+    </div>
+
+    <div id="overlay"></div>
+
+    <script>
+        // Get toggle elements
+        const mouthToggle = document.getElementById('mouthToggle');
+        const eyesToggle = document.getElementById('eyesToggle');
+        const noseToggle = document.getElementById('noseToggle');
+        const breathingToggle = document.getElementById('breathingToggle');
+        
+        // Get SVG elements
+        const mouth = document.querySelector('.mouth');
+        const mouth_contour = document.querySelector('.mouth_contour');
+        const leftEye = document.querySelector('.left_eye');
+        const rightEye = document.querySelector('.right_eye');
+        const nose = document.querySelector('.nose');
+        const svgElement = document.querySelector('svg');
+        const pumpkinContainer = document.querySelector('.pumpkin-container');
+
+        // Add audio playback on SVG click
+        const ambianceAudio = document.getElementById('ambiance-audio');
+       
+        
+        function toggleAudio() {
+            if (ambianceAudio.paused) {
+                ambianceAudio.play()
+                    .then(() => {
+                        console.log('Ambiance audio started');
+                    })
+                    .catch((error) => {
+                        console.error('Error playing audio:', error);
+                    });
+            } else {
+                ambianceAudio.pause();
+                console.log('Ambiance audio paused');
+            }
+        };
+
+        
+        // Mouth animation toggle
+        mouthToggle.addEventListener('change', function() {
+            if (this.checked) {
+                mouth.classList.add('mouth-animating');
+                mouth_contour.classList.add('mouth-animating');
+            } else {
+                mouth.classList.remove('mouth-animating');
+            }
+        });
+        
+        // Eyes animation toggle
+        eyesToggle.addEventListener('change', function() {
+            if (this.checked) {
+                svgElement.classList.add('eyes-animating');
+            } else {
+                svgElement.classList.remove('eyes-animating');
+            }
+        });
+        
+        // Nose animation toggle
+        noseToggle.addEventListener('change', function() {
+            if (this.checked) {
+                nose.classList.add('nose-animating');
+            } else {
+                nose.classList.remove('nose-animating');
+            }
+        });
+        
+        // Breathing animation toggle
+        breathingToggle.addEventListener('change', function() {
+            if (this.checked) {
+                pumpkinContainer.classList.add('pumpkin-breathing');
+            } else {
+                pumpkinContainer.classList.remove('pumpkin-breathing');
+            }
+        });
+        
+        // Recording toggle
+        const recordingToggle = document.getElementById('recordingToggle');
+        if (recordingToggle) {
+            recordingToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    startRecording();
+                } else {
+                    stopRecording();
+                }
+            });
+        }
+        
+        function startRecording() {
+            const overlay = document.getElementById('overlay');
+            overlay.classList.add('recording_animation');
+            
+            // Add red dot indicator
+            if (!document.getElementById('recording-dot')) {
+                const redDot = document.createElement('div');
+                redDot.style.position = 'fixed';
+                redDot.style.top = '20px';
+                redDot.style.right = '20px';
+                redDot.style.width = '30px';
+                redDot.style.height = '30px';
+                redDot.style.backgroundColor = 'red';
+                redDot.style.borderRadius = '50%';
+                redDot.style.zIndex = '1001';
+                redDot.id = 'recording-dot';
+                document.body.appendChild(redDot);
+            }
+        }
+        
+        function stopRecording() {
+            const overlay = document.getElementById('overlay');
+            overlay.classList.remove('recording_animation');
+            
+            // Remove red dot indicator
+            const redDot = document.getElementById('recording-dot');
+            if (redDot) {
+                redDot.remove();
+            }
+        }
+        
+        // Random eye twitch when eyes are not animating
+        setInterval(() => {
+            if (!eyesToggle.checked && Math.random() > 0.7) {
+                leftEye.style.transform = 'scaleY(0.1)';
+                rightEye.style.transform = 'scaleY(0.1)';
+                setTimeout(() => {
+                    leftEye.style.transform = 'scaleY(1)';
+                    rightEye.style.transform = 'scaleY(1)';
+                }, 150);
+            }
+        }, 5000);
+
+        // Text input handler
+        const agentTextInput = document.getElementById('agentTextInput');
+        
+        agentTextInput.addEventListener('input', (e) => {
+            const agentSubtitle = document.querySelector('.subtitle-agent');
+            agentSubtitle.style.opacity = 1;
+            agentSubtitle.classList.remove('fadeout');
+            agentSubtitle.textContent = e.target.value;
+            if (e.target.value) {
+                void agentSubtitle.offsetWidth;
+                agentSubtitle.classList.add('fadeout');
+            }
+        });
+
+        // Lightning effect function
+        function triggerLightning() {
+            const overlay = document.getElementById('overlay');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'white';
+            overlay.style.pointerEvents = 'none';
+            overlay.style.zIndex = '100';
+            
+            const thunder = new Audio('thunder.mp3');
+            thunder.volume = 1.0;
+            thunder.play().catch(err => console.error('Error playing thunder:', err));
+
+            setTimeout(() => {
+                const evilLaugh = new Audio('evil-laugh.mp3');
+                evilLaugh.play().catch(err => console.error('Error playing evil laugh:', err));
+            }, 400);
+
+            // Create lightning flicker effect
+            overlay.style.opacity = '1';
+            setTimeout(() => overlay.style.opacity = '0', 50);
+            setTimeout(() => overlay.style.opacity = '1', 250);
+            setTimeout(() => overlay.style.opacity = '0', 350);
+            setTimeout(() => overlay.style.opacity = '0.8', 450);
+            setTimeout(() => overlay.style.opacity = '0', 550);
+            setTimeout(() => overlay.style.opacity = '0.5', 650);
+            setTimeout(() => overlay.style.opacity = '0', 750);
+        }
+
+        // Lightning button handler
+        const lightningButton = document.getElementById('lightningButton');
+        if (lightningButton) {
+            lightningButton.addEventListener('click', triggerLightning);
+            
+            // Hover effect for lightning button
+            lightningButton.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+            lightningButton.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        }
+
+        // Audio toggle button handler
+        const audioToggleButton = document.getElementById('audioToggleButton');
+        if (audioToggleButton) {
+            audioToggleButton.addEventListener('click', function() {
+                if (ambianceAudio.paused) {
+                    ambianceAudio.play()
+                        .then(() => {
+                            this.textContent = '🔇 Stop Audio';
+                            this.style.background = 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
+                        })
+                        .catch((error) => {
+                            console.error('Error playing audio:', error);
+                        });
+                } else {
+                    ambianceAudio.pause();
+                    this.textContent = '🔊 Play Audio';
+                    this.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                }
+            });
+            
+            // Hover effect
+            audioToggleButton.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+            audioToggleButton.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        }
+
+        // WebSocket connection (opt-in to avoid console errors when server is absent)
+        const wsEnableToggle = document.getElementById('wsEnableToggle');
+        let ws;
+        let wsConnected = false;
+
+        function attachOnMessage() {
+            if (!ws) return;
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.action === 'mouth') {
+                        if (data.state === 'talk') {
+                            mouth.classList.add('mouth-animating');
+                            mouth_contour.classList.add('mouth-animating');
+                        } else {
+                            mouth.classList.remove('mouth-animating');
+                            mouth_contour.classList.remove('mouth-animating');
+                        }
+                    }
+
+                    if (data.action === 'subtitle') {
+                        if (data.speaker === 'user') {
+                            const userSubtitle = document.querySelector('.subtitle-user');
+                            userSubtitle.style.opacity = 1;
+                            userSubtitle.classList.remove('fadeout');
+                            userSubtitle.textContent = data.data;
+                            void userSubtitle.offsetWidth; // restart animation
+                            userSubtitle.classList.add('fadeout');
+                        } else {
+                            const agentSubtitle = document.querySelector('.subtitle-agent');
+                            agentSubtitle.style.opacity = 1;
+                            agentSubtitle.classList.remove('fadeout');
+                            agentSubtitle.textContent = data.data;
+                            void agentSubtitle.offsetWidth; // restart animation
+                            agentSubtitle.classList.add('fadeout');
+                        }
+                    }
+
+                    if (data.action === 'event' && data.message === 'lightning') {
+                        triggerLightning();
+                    }
+
+                    if (data.action === 'event' && data.message === 'start_recording') {
+                        if (recordingToggle) recordingToggle.checked = true;
+                        startRecording();
+                    }
+                    if (data.action === 'event' && data.message === 'stop_recording') {
+                        if (recordingToggle) recordingToggle.checked = false;
+                        stopRecording();
+                    }
+                } catch (e) {
+                    // Ignore malformed messages
+                }
+            };
+        }
+
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket('ws://localhost:8080');
+                ws.onopen = () => {
+                    wsConnected = true;
+                    console.log('✓ WebSocket connection established');
+                };
+                ws.onerror = () => {
+                    // Swallow error to avoid noisy console; leave UI working without WS
+                    wsConnected = false;
+                };
+                ws.onclose = () => {
+                    if (wsConnected) {
+                        console.log('WebSocket connection closed');
+                    }
+                    wsConnected = false;
+                };
+                attachOnMessage();
+            } catch (e) {
+                // Do nothing; continue without WebSocket
+                wsConnected = false;
+            }
+        }
+
+        function disconnectWebSocket() {
+            try { if (ws) ws.close(); } catch (e) {}
+            ws = undefined;
+            wsConnected = false;
+        }
+
+        if (wsEnableToggle) {
+            wsEnableToggle.addEventListener('change', function () {
+                if (this.checked) {
+                    connectWebSocket();
+                } else {
+                    disconnectWebSocket();
+                }
+            });
+        }
+
+        // Auto-enable via URL parameter `?ws=1` (default is off to avoid console errors)
+        try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('ws') === '1' && wsEnableToggle) {
+                wsEnableToggle.checked = true;
+                connectWebSocket();
+            }
+        } catch (e) {
+            // ignore
+        }
+    </script>
+</body>
+</html>
