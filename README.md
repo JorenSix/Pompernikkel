@@ -2,6 +2,8 @@
 
 This repo contains an animated HTML/SVG pumpkin named Pompernikkel for an interactive Halloween wall projection. The page features a breathing pumpkin with animated mouth/eyes/nose, ambient audio and background video, subtitles, a lightning effect, and on-screen controls. You can also drive the animation and interactivity via a simple WebSocket server.
 
+**[Try the Pompernikkel demo→](https://jorensix.github.io/Pompernikkel/)**
+
 In the actual setup Pompernikkel was connected to an LLM and could answer questions by kids - or adult using some additonal components.
 
 <p align="center">
